@@ -5,97 +5,152 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+
 public class compile extends HttpServlet {
 
     public void init()
     {
-
         // 执行必需的初始化
         System.out.println("Compile servlet initialized!");
     }
     protected void doPost(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws javax.servlet.ServletException, IOException {
-        List<String> paths = Arrays.asList(new String[] {"F:\\gra_pro\\bee\\BF201401\\Bee.java","F:\\gra_pro\\bee\\BF201401\\BeeFarming.java","F:\\gra_pro\\bee\\BF201401\\Flower.java","F:\\gra_pro\\bee\\BF201401\\FlyingStatus.java","F:\\gra_pro\\bee\\BF201401\\Hornet.java",});
+        request.setCharacterEncoding("utf-8");
+        response.setCharacterEncoding("utf-8");
+        String beecode=request.getParameter("beecode"),hornetcode=request.getParameter("hornetcode"),name=request.getParameter("name");
+        System.out.println("compile is running!"+name);
+
+        if(ImportTest.checkPackage(beecode)&&ImportTest.checkPackage(hornetcode)){
+            response.getWriter().write(match2(name, beecode, hornetcode));
+        }else{
+            response.getWriter().write("{\"state\":\"0\",\"message\":\"只能导入指定的java包！\"}");
+        }
+
+        System.out.println("Where am I?");
+    }
+
+    protected void doGet(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws javax.servlet.ServletException, IOException {
+    }
+
+    class Result {
+        public boolean flag=false;
+        public String e=null;
+        public int result=0;
+        public Result(boolean flag,String e,int result){
+            this.flag=flag;
+            this.e=e;
+            this.result=result;
+        }
+    }
+    private String match2(String name,String beecode,String hornetcode){
+        RankManager rankManager=new RankManager();
+        rankManager.readRank(name);
+        String[] nameL=rankManager.getList();
+        System.out.println(nameL);
+        int matchNum=nameL.length;
+        int[] result = new int[matchNum];
+        boolean flag=true;
+        Result result1=new Result(true, "", 0);
+        for(int i=0;i<matchNum;i++){
+            if(flag&&result1.flag){
+                result1=match(nameL[i],beecode,hornetcode);
+                result[i]=result1.result;
+            }else {
+                flag=false;
+            }
+        }
+        System.out.println(flag);
+        if(flag){
+            rankManager.match(result);
+            rankManager.writeRank();
+            try{
+                PrintWriter out = new PrintWriter(new FileWriter("F:\\gra_pro\\bee\\BF2019\\code\\"+name+"_B.java"));
+                out.print(beecode);
+                PrintWriter out1 = new PrintWriter(new FileWriter("F:\\gra_pro\\bee\\BF2019\\code\\"+name+"_H.java"));
+                out1.print(hornetcode);
+                out.close();
+                out1.close();
+            }catch (Exception e){
+                return "{\"state\":\"0\",\"message\":\""+e.toString()+"\"}";
+            }
+            return "{\"state\":\"1\",\"message\":\""+RankManager.getRank()+"\"}";
+        }else {
+            return "{\"state\":\"0\",\"message\":\""+result1.e+"\"}";
+        }
+    }
+    private Result match(String name,String beecode,String hornetcode){
+        List<String> paths = Arrays.asList(new String[] {"F:\\gra_pro\\bee\\BF2019\\Bee.java","F:\\gra_pro\\bee\\BF2019\\BeeFarming.java","F:\\gra_pro\\bee\\BF2019\\Flower.java","F:\\gra_pro\\bee\\BF2019\\FlyingStatus.java"});
         Iterator<? extends JavaFileObject> compilationUnits;
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(
                 diagnostics, null, null);
         compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();
-        request.setCharacterEncoding("utf-8");
-        response.setCharacterEncoding("utf-8");
-        System.out.println("compile is running!");
-        /*
-        class Mydata{
-            boolean flag1=false,flag2=false;
-            Exception e1;
-            Object message;
-        }
-        Mydata mydata=new Mydata();
-        class CompileThread implements Runnable{
-            String code;
-            Mydata mydata;
-            public CompileThread(String code,Mydata mydata){
-                this.code=code;
-                this.mydata=mydata;
-            }
-            @Override
-            public void run() {
-                //int b=2/0;
-                try {
-                    LoaderTest loaderTest=new LoaderTest(code);
-                    mydata.message=loaderTest.testInvoke();
-                    //int a=2/0;
-                    mydata.flag1=true;
-                } catch (Exception e){
-                    mydata.e1=e;
-                    e.printStackTrace();
-                    mydata.flag2=true;
-                }
-            }
-        }
-        CompileThread myThread=new CompileThread(request.getParameter("code"),mydata);
-        Thread compileThread=new Thread(myThread);
-        compileThread.start();
-        while (compileThread.isAlive()&&(!compileThread.isInterrupted())){
-            try{
-                Thread.currentThread().sleep(1000);
-            }catch (Exception e){
-            }
-        }
-        System.out.println(mydata.flag1+mydata.message.toString()+"aaaaa");
-        if(mydata.flag1){
-            response.getWriter().write(mydata.message.toString());
-        }else if(mydata.flag2){
-            response.getWriter().write(mydata.e1.getMessage());
-        }else {
-            response.getWriter().write("NullPointerException!请检查语法错误！");
-        }
-        System.out.println(Thread.currentThread().getName()+"aaa");
-        */
+
         boolean flag=false;
-        Object message=null;
+        String message=null;
         String e1=null;
-        try {
-            LoaderTest loaderTest=new LoaderTest(request.getParameter("code"),compilationUnits);
+        float result1=0,result2=0;
+        int result=0;
+
+        String bee,hornet;
+        bee=readcode(name+"_B.java");
+        hornet=readcode(name+"_H.java");
+        try {  //己方蜜蜂对方黄蜂，对战分数算作己方得分
+            LoaderTest loaderTest=new LoaderTest(beecode,hornet,compilationUnits);
             flag=loaderTest.testInvoke();
-            message=loaderTest.getMessage();
+            if(flag){
+                result1=(float)loaderTest.getMessage();
+            }else {}
             e1=loaderTest.getException();
         } catch (Exception e){
             e.printStackTrace();
-            //response.getWriter().write(e.getMessage());
         }
         if(flag){
-            response.getWriter().write(message.toString());
+            try {
+                System.out.println("sdafasd");
+                compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();
+                LoaderTest loaderTest=new LoaderTest(bee ,hornetcode,compilationUnits);
+                flag=loaderTest.testInvoke();
+                if(flag){
+                    result2=(float)loaderTest.getMessage();
+                }else {}
+                e1=loaderTest.getException();
+            } catch (Exception e){
+                e.printStackTrace();
+            }
+            if(flag){
+                if(result1>result2){
+                    result=1;
+                    //message="You win!  "+result1/100+">"+result2/100;
+                }else{
+                    result=0;
+                    //message="You lose!  "+result1/100+"<"+result2/100;
+                }
+            }else {
+            }
         }else {
-            response.getWriter().write(e1);
+            //response.getWriter().write(e1);
         }
-        System.out.println("Where am I?");
+        return new Result(flag, e1, result);
     }
-
-    protected void doGet(javax.servlet.http.HttpServletRequest request, javax.servlet.http.HttpServletResponse response) throws javax.servlet.ServletException, IOException {
-
+    private String readcode(String name){
+        String str="";
+        File file=new File("F:\\gra_pro\\bee\\BF2019\\code\\"+name);
+        try {
+            FileInputStream in=new FileInputStream(file);
+            // size 为字串的长度 ，这里一次性读完
+            int size=in.available();
+            byte[] buffer=new byte[size];
+            in.read(buffer);
+            in.close();
+            str=new String(buffer,"utf-8");
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
+        return str;
     }
-
 
 }
 

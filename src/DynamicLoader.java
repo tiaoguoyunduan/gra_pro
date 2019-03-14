@@ -15,27 +15,20 @@ public class DynamicLoader {
     private MemoryJavaFileManager manager;
     private boolean flag;
     private StringWriter exceptionMessage=new StringWriter();
-    //private List<? extends JavaFileObject> compilationUnits;
-    /*
-    public static Map<String, byte[]> compile(String javaSrc) {
-        Pattern pattern = Pattern.compile("public\\s+class\\s+(\\w+)");
-        Matcher matcher = pattern.matcher(javaSrc);
-        if (matcher.find())
-        return compile(matcher.group(1) + ".java", javaSrc);
-        return null;
-    }
-    */
+
     /**
-    * @param javaName the name of your public class,eg: <code>TestClass.java</code>
-    * @param javaSrc source code string
+    * @param bee the name of your public class,eg: <code>TestClass.java</code>
+    * @param hornet source code string
     * @return return the Map, the KEY means ClassName, the VALUE means bytecode.
     */
-    public void compile(String javaName, String javaSrc, List<JavaFileObject> compilationUnits) {
+    public void compile(String bee, String hornet, List<JavaFileObject> compilationUnits) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager stdManager = compiler.getStandardFileManager(null, null, null);
         manager = new MemoryJavaFileManager(stdManager);
         try {
-            JavaFileObject javaFileObject1 = manager.makeStringSource(javaName, javaSrc);
+            JavaFileObject javaFileObject1 = manager.makeStringSource("HoneyBee.java", bee);
+            compilationUnits.add(javaFileObject1);
+            javaFileObject1 = manager.makeStringSource("Hornet.java", hornet);
             compilationUnits.add(javaFileObject1);
             JavaCompiler.CompilationTask task = compiler.getTask(exceptionMessage, manager, null, null, null, compilationUnits);
             flag=task.call();
@@ -52,9 +45,6 @@ public class DynamicLoader {
     public String getException(){
         return exceptionMessage.toString();
     }
-
-
-
 
     public static class MemoryClassLoader extends URLClassLoader {
         Map<String, byte[]> classBytes = new HashMap<String, byte[]>();

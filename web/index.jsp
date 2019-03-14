@@ -1,4 +1,6 @@
-<%--
+<%@ page import="java.io.IOException" %>
+<%@ page import="java.util.Scanner" %>
+<%@ page import="java.io.File" %><%--
   Created by IntelliJ IDEA.
   User: lordofriver
   Date: 2019/1/8
@@ -11,8 +13,7 @@
   <title>毕设主页</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" >
   <script>
-    function button1() {
-        //document.getElementById("div1").innerText="aaaaaaaaa";
+    function sendPost(url,message) {
       var xmlhttp;
       if (window.XMLHttpRequest)
       {// code for IE7+, Firefox, Chrome, Opera, Safari
@@ -22,20 +23,43 @@
       {// code for IE6, IE5
         xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
       }
-        //document.getElementById("div1").innerText="111111";
-      var code1=htmlEscape(code.value);
-      xmlhttp.open("post","/myweb/compile",true);
+      xmlhttp.open("post",url,true);
       xmlhttp.setRequestHeader("Content-type","application/x-www-form-urlencoded");
-      xmlhttp.send("code="+code1);
-        //document.getElementById("div1").innerText=code.value;
+      xmlhttp.send(message);
       xmlhttp.onreadystatechange=function()
       {
         if (xmlhttp.readyState==4 && xmlhttp.status==200)
         {
-            //document.getElementById("div1").innerText="33333";
-          confirm(xmlhttp.responseText);
+            //document.getElementById("div1").innerText=xmlhttp.responseText;
+            var compileMessage=JSON.parse(xmlhttp.responseText);
+            if(compileMessage.state==0){
+                alert(compileMessage.message);
+            }else{
+                document.getElementById("rank").innerHTML=compileMessage.message;
+                alert("对战成功！")
+            }
         }
       }
+    }
+    function button1() {
+        var beecode = document.getElementById("beecode");
+        var hornetcode = document.getElementById("hornetcode");
+        var myname = document.getElementById("myname");
+        if(beecode.value==""){
+            alert("请输入HoneyBee部分代码！");
+            beecode.focus();
+        }else if(hornetcode.value==""){
+            alert("请输入Hornet部分代码！");
+            hornetcode.focus();
+        }else if(myname.value==""){
+            alert("请输入姓名！");
+            myname.focus();
+        }else{
+            var code1=htmlEscape(beecode.value);
+            var code2=htmlEscape(hornetcode.value);
+            var username=myname.value;
+            sendPost("/myweb/compile","beecode="+code1+"&hornetcode="+code2+"&name="+username);
+        }
     }
 
     function htmlEscape(text){
@@ -56,7 +80,15 @@
   <style>
     .input1{
       height:90%;
-      width:55%;
+      width:40%;
+        font-family: 'Source Code Pro','DejaVu Sans Mono','Ubuntu Mono','Anonymous Pro','Droid Sans Mono',Menlo,Monaco,Consolas,Inconsolata,Courier,monospace,"PingFang SC","Microsoft YaHei",sans-serif;
+        background: #282c34;
+        font-size: 15px;
+        color: #abb2bf;
+    }
+    .input2{
+        height:90%;
+        width:40%;
         font-family: 'Source Code Pro','DejaVu Sans Mono','Ubuntu Mono','Anonymous Pro','Droid Sans Mono',Menlo,Monaco,Consolas,Inconsolata,Courier,monospace,"PingFang SC","Microsoft YaHei",sans-serif;
         background: #282c34;
         font-size: 15px;
@@ -66,8 +98,6 @@
           position: absolute;
           left: 80%;
           top: 0;
-          height:90%;
-          width:15%;
           border-style: groove;
       }
   </style>
@@ -76,18 +106,48 @@
 <body>
 <div id="div1"></div>
 <div>
-    <textarea id="code" class="input1" spellcheck="false"></textarea><br>
+    <textarea id="beecode" class="input1" spellcheck="false" placeholder="HoneyBee code."></textarea>
+    <textarea id="hornetcode" class="input2" spellcheck="false" placeholder="Hornet code."></textarea><br>
+    <input type="text" id="myname" placeholder="name">
     <input type="button" value="提交" onclick="button1()">
-    <a href="${pageContext.request.contextPath}/compile">aaaa</a>
-    <form class="rank" id="rank">
-        <input type="radio" name="student" value="张三">张三
-        <br>
-        <input type="radio" name="student" value="李四">李四
-        <br>
-        <input type="radio" name="student" value="王五">王五
-        <br>
-        <input type="radio" name="student" value="赵六">赵六
-    </form>
+    <table class="rank" id="rank" border="1">
+        <%
+            try{
+                Scanner input = new Scanner(new File("F:\\gra_pro\\project\\test\\rank.dat"));
+                int playerNum=Integer.parseInt(input.next());
+                //out.print(playerNum);
+                String[] name=new String[playerNum];
+                int[] score=new int[playerNum];
+                String n,message="";
+                int s;
+                for(int i=0;i<playerNum;i++){
+                    name[i]=input.next();
+                }
+                for(int i=0;i<playerNum;i++){
+                    score[i]=Integer.parseInt(input.next());
+                }
+                input.close();
+                for(int i=0;i<playerNum-1;i++){
+                    for(int j=0;j<playerNum-1-i;j++){
+                        if(score[j]<score[j+1]){
+                            s=score[j];
+                            n=name[j];
+                            score[j]=score[j+1];
+                            name[j]=name[j+1];
+                            score[j+1]=s;
+                            name[j+1]=n;
+                        }
+                    }
+                }
+                for(int i=0;i<playerNum;i++){
+                    message=message+"<tr><th>"+name[i]+"</th><th>"+score[i]+"</th></tr>";
+                }
+                out.print(message);
+            }catch (IOException e){
+                e.printStackTrace();
+            }
+        %>
+    </table>
 </div>
 </body>
 
