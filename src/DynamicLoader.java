@@ -7,20 +7,11 @@ import java.nio.CharBuffer;
 import java.util.*;
 
 public class DynamicLoader {
-    /**
-    * auto fill in the java-name with code, return null if cannot find the public class
-    * @param javaSrc source code string
-    * @return return the Map, the KEY means ClassName, the VALUE means bytecode.
-    */
+
     private MemoryJavaFileManager manager;
     private boolean flag;
     private StringWriter exceptionMessage=new StringWriter();
 
-    /**
-    * @param bee the name of your public class,eg: <code>TestClass.java</code>
-    * @param hornet source code string
-    * @return return the Map, the KEY means ClassName, the VALUE means bytecode.
-    */
     public void compile(String bee, String hornet, List<JavaFileObject> compilationUnits) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager stdManager = compiler.getStandardFileManager(null, null, null);
@@ -29,9 +20,9 @@ public class DynamicLoader {
             JavaFileObject javaFileObject1 = manager.makeStringSource("HoneyBee.java", bee);
             compilationUnits.add(javaFileObject1);
             javaFileObject1 = manager.makeStringSource("Hornet.java", hornet);
-            compilationUnits.add(javaFileObject1);
+            compilationUnits.add(javaFileObject1);      //加载两个字符串源码到编译集合中，下一步获取编译任务
             JavaCompiler.CompilationTask task = compiler.getTask(exceptionMessage, manager, null, null, null, compilationUnits);
-            flag=task.call();
+            flag=task.call();       //执行编译任务，返回是否成功
         } catch (Exception e) {
             e.printStackTrace();
         }

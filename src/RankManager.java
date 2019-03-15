@@ -2,12 +2,12 @@ import java.io.*;
 import java.util.*;
 
 public class RankManager{
-    private String playerName=null;              //当前玩家姓名
+    private String playerName="";              //当前玩家姓名
     private int playerNum=0,player=0,matchNum=0; //玩家数量、当前玩家编号、比赛场次
     private String[] namel;                      //玩家列表
     private List<String> name=new ArrayList<>();
     private int[] matchScore,score;              //比赛分数，队伍积分
-    public void readRank(String playerName){
+    public void readRank(String playerName){     //读取积分表，判断提交者是否初次提交
         this.playerName=playerName;
         try {
             Scanner input = new Scanner(new File("F:\\gra_pro\\project\\test\\rank.dat"));
@@ -44,8 +44,8 @@ public class RankManager{
     }
     public String[] getList(){
         return name.toArray(new String[0]);
-    }
-    public void match(int result[]){
+    }   //获取对战选手列表
+    public void match(int result[]){   //接收对战结果，更新积分表
         int myScore=0;
         if(player==-1){
             for(int i=0;i<playerNum;i++){
@@ -78,7 +78,7 @@ public class RankManager{
         }
 
     }
-    public void writeRank(){
+    public void writeRank(){  //存储积分表
         try {
             String nameS="",scoreS="",matchScoreS="";
             int p=0;
@@ -101,7 +101,7 @@ public class RankManager{
             e.printStackTrace();
         }
     }
-    public static String getRank(){
+    public static String getRank(){     //获取排序后的积分表
         try{
             Scanner input = new Scanner(new File("F:\\gra_pro\\project\\test\\rank.dat"));
             int playerNum=Integer.parseInt(input.next());

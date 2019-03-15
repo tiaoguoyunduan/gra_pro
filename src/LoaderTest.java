@@ -15,13 +15,13 @@ public class LoaderTest{
     }
 
     public boolean testInvoke() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NullPointerException {
-        dynamicLoader.compile(bee, hornet, compilationUnits);
-        if(dynamicLoader.isFinished()){
-            Map<String, byte[]> bytecode=dynamicLoader.getClassBytes();
+        dynamicLoader.compile(bee, hornet, compilationUnits);        //动态编译
+        if(dynamicLoader.isFinished()){                              //如果编译成功
+            Map<String, byte[]> bytecode=dynamicLoader.getClassBytes();  //获取字节码
             DynamicLoader.MemoryClassLoader classLoader = new DynamicLoader.MemoryClassLoader(bytecode);
-            Class clazz = classLoader.loadClass("BeeFarming");
-            Object object = clazz.newInstance();
-            Method method = clazz.getMethod("letsrun");
+            Class clazz = classLoader.loadClass("BeeFarming");      //动态加载类
+            Object object = clazz.newInstance();                        //实例化
+            Method method = clazz.getMethod("letsrun");           //执行对战方法
             message = method.invoke(object);
             //System.out.println(a+"   "+b+"   "+message);
             return true;

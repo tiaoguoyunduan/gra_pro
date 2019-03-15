@@ -19,8 +19,8 @@ public class compile extends HttpServlet {
         String beecode=request.getParameter("beecode"),hornetcode=request.getParameter("hornetcode"),name=request.getParameter("name");
         System.out.println("compile is running!"+name);
 
-        if(ImportTest.checkPackage(beecode)&&ImportTest.checkPackage(hornetcode)){
-            response.getWriter().write(match2(name, beecode, hornetcode));
+        if(ImportTest.checkPackage(beecode)&&ImportTest.checkPackage(hornetcode)){       //导入包检测
+            response.getWriter().write(matchall(name, beecode, hornetcode));
         }else{
             response.getWriter().write("{\"state\":\"0\",\"message\":\"只能导入指定的java包！\"}");
         }
@@ -41,16 +41,17 @@ public class compile extends HttpServlet {
             this.result=result;
         }
     }
-    private String match2(String name,String beecode,String hornetcode){
+    private String matchall(String name,String beecode,String hornetcode){
         RankManager rankManager=new RankManager();
         rankManager.readRank(name);
-        String[] nameL=rankManager.getList();
+        String[] nameL=rankManager.getList();                  //对战选手列表
         System.out.println(nameL);
         int matchNum=nameL.length;
-        int[] result = new int[matchNum];
-        boolean flag=true;
-        Result result1=new Result(true, "", 0);
-        for(int i=0;i<matchNum;i++){
+        int[] result = new int[matchNum];                      //存储所有对战结果，0负1胜
+        boolean flag=true;      //标志位，是否出错
+        Result result1=new Result(true, "", 0);  //单次对战结果，是否成功、错误信息、对战结果
+
+        for(int i=0;i<matchNum;i++){                           //依次进行对战，任意一次出错后直接退出且标志位设为false
             if(flag&&result1.flag){
                 result1=match(nameL[i],beecode,hornetcode);
                 result[i]=result1.result;
@@ -59,6 +60,7 @@ public class compile extends HttpServlet {
             }
         }
         System.out.println(flag);
+
         if(flag){
             rankManager.match(result);
             rankManager.writeRank();
@@ -84,7 +86,7 @@ public class compile extends HttpServlet {
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(
                 diagnostics, null, null);
-        compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();
+        compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();  //固定java文件集合
 
         boolean flag=false;
         String message=null;
@@ -97,7 +99,7 @@ public class compile extends HttpServlet {
         hornet=readcode(name+"_H.java");
         try {  //己方蜜蜂对方黄蜂，对战分数算作己方得分
             LoaderTest loaderTest=new LoaderTest(beecode,hornet,compilationUnits);
-            flag=loaderTest.testInvoke();
+            flag=loaderTest.testInvoke();         //是否编译成功
             if(flag){
                 result1=(float)loaderTest.getMessage();
             }else {}
