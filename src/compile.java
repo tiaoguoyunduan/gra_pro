@@ -1,13 +1,9 @@
 import java.io.*;
 import javax.servlet.http.*;
-import javax.tools.*;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 
 
 public class compile extends HttpServlet {
-
+    public final static String filePath="F:\\gra_pro\\bee\\BF2019";
     public void init()
     {
         // 执行必需的初始化
@@ -42,6 +38,7 @@ public class compile extends HttpServlet {
         }
     }
     private String matchall(String name,String beecode,String hornetcode){
+        StringBuffer message=new StringBuffer("                  Your goals.   Opponent's goals.\r\n\r\n");
         RankManager rankManager=new RankManager();
         rankManager.readRank(name);
         String[] nameL=rankManager.getList();                  //对战选手列表
@@ -53,53 +50,49 @@ public class compile extends HttpServlet {
 
         for(int i=0;i<matchNum;i++){                           //依次进行对战，任意一次出错后直接退出且标志位设为false
             if(flag&&result1.flag){
-                result1=match(nameL[i],beecode,hornetcode);
+                result1=match(message,nameL[i],beecode,hornetcode);
                 result[i]=result1.result;
             }else {
                 flag=false;
             }
         }
-        System.out.println(flag);
-
+        System.out.println(flag+"asdasd");
+        System.out.println(result1.e);
         if(flag){
-            rankManager.match(result);
-            rankManager.writeRank();
             try{
-                PrintWriter out = new PrintWriter(new FileWriter("F:\\gra_pro\\bee\\BF2019\\code\\"+name+"_B.java"));
+                PrintWriter out = new PrintWriter(new FileWriter(filePath+"\\code\\"+name+"_B.java"));
                 out.print(beecode);
-                PrintWriter out1 = new PrintWriter(new FileWriter("F:\\gra_pro\\bee\\BF2019\\code\\"+name+"_H.java"));
+                PrintWriter out1 = new PrintWriter(new FileWriter(filePath+"\\code\\"+name+"_H.java"));
                 out1.print(hornetcode);
                 out.close();
                 out1.close();
+                rankManager.match(result);
+                rankManager.writeRank();
             }catch (Exception e){
                 return "{\"state\":\"0\",\"message\":\""+e.toString()+"\"}";
             }
-            return "{\"state\":\"1\",\"message\":\""+RankManager.getRank()+"\"}";
+            return "{\"state\":\"1\",\"rank\":\""+RankManager.getRank()+"\",\"message\":\""+message.toString()+"\"}";
         }else {
             return "{\"state\":\"0\",\"message\":\""+result1.e+"\"}";
         }
     }
-    private Result match(String name,String beecode,String hornetcode){
-        List<String> paths = Arrays.asList(new String[] {"F:\\gra_pro\\bee\\BF2019\\Bee.java","F:\\gra_pro\\bee\\BF2019\\BeeFarming.java","F:\\gra_pro\\bee\\BF2019\\Flower.java","F:\\gra_pro\\bee\\BF2019\\FlyingStatus.java"});
-        Iterator<? extends JavaFileObject> compilationUnits;
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(
-                diagnostics, null, null);
-        compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();  //固定java文件集合
+    private Result match(StringBuffer message,String name,String beecode,String hornetcode){
 
         boolean flag=false;
-        String message=null;
         String e1=null;
         float result1=0,result2=0;
+        float[] goals1=new float[4],goals2=new float[4];
         int result=0;
 
-        String bee,hornet;
-        bee=readcode(name+"_B.java");
-        hornet=readcode(name+"_H.java");
+        String[] className = new String[] {"HoneyBee.java", "Hornet.java"};
+        String[] code1 = new String[2] , code2 = new String[2];
+        code1[0] = beecode; code1[1] = readcode(name+"_H.java");
+        code2[0] = readcode(name+"_B.java"); code2[1] = hornetcode;
+
         try {  //己方蜜蜂对方黄蜂，对战分数算作己方得分
-            LoaderTest loaderTest=new LoaderTest(beecode,hornet,compilationUnits);
-            flag=loaderTest.testInvoke();         //是否编译成功
+            LoaderTest loaderTest=new LoaderTest(code1, className,
+                    new String[] {filePath+"\\Bee.java",filePath+"\\BeeFarming.java",filePath+"\\Flower.java",filePath+"\\FlyingStatus.java"});
+            flag=loaderTest.testInvoke("BeeFarming", "letsrun", goals1, float[].class);         //是否编译成功
             if(flag){
                 result1=(float)loaderTest.getMessage();
             }else {}
@@ -110,9 +103,9 @@ public class compile extends HttpServlet {
         if(flag){
             try {
                 System.out.println("sdafasd");
-                compilationUnits = fileManager.getJavaFileObjectsFromStrings(paths).iterator();
-                LoaderTest loaderTest=new LoaderTest(bee ,hornetcode,compilationUnits);
-                flag=loaderTest.testInvoke();
+                LoaderTest loaderTest=new LoaderTest(code2, className,
+                        new String[] {filePath+"\\Bee.java",filePath+"\\BeeFarming.java",filePath+"\\Flower.java",filePath+"\\FlyingStatus.java"});
+                flag=loaderTest.testInvoke("BeeFarming", "letsrun", goals2, float[].class);
                 if(flag){
                     result2=(float)loaderTest.getMessage();
                 }else {}
@@ -122,22 +115,25 @@ public class compile extends HttpServlet {
             }
             if(flag){
                 if(result1>result2){
+                    message.append("compete with "+name+": You win!\r\n");
                     result=1;
-                    //message="You win!  "+result1/100+">"+result2/100;
                 }else{
+                    message.append("compete with "+name+": You lose!\r\n");
                     result=0;
-                    //message="You lose!  "+result1/100+"<"+result2/100;
                 }
+                message.append("totalHoney:       ").append(goals1[0]).append("        ").append(goals2[0]).append("\r\n");
+                message.append("still alive Bees: ").append(goals1[1]).append("          ").append(goals2[1]).append("\r\n");
+                message.append("The time left:    ").append(goals1[2]).append("          ").append(goals2[2]).append("\r\n");
+                message.append("Final Goals:      ").append(goals1[3]).append("        ").append(goals2[3]).append("\r\n\r\n");
             }else {
             }
         }else {
-            //response.getWriter().write(e1);
         }
         return new Result(flag, e1, result);
     }
     private String readcode(String name){
         String str="";
-        File file=new File("F:\\gra_pro\\bee\\BF2019\\code\\"+name);
+        File file=new File(filePath+"\\code\\"+name);
         try {
             FileInputStream in=new FileInputStream(file);
             // size 为字串的长度 ，这里一次性读完
@@ -147,7 +143,6 @@ public class compile extends HttpServlet {
             in.close();
             str=new String(buffer,"utf-8");
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return null;
         }

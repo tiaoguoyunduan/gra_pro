@@ -9,24 +9,42 @@ import java.util.*;
 public class DynamicLoader {
 
     private MemoryJavaFileManager manager;
-    private boolean flag;
-    private StringWriter exceptionMessage=new StringWriter();
+    private List<JavaFileObject> compilationUnits;
+    private JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+    private StandardJavaFileManager stdManager = compiler.getStandardFileManager(null, null, null);
 
-    public void compile(String bee, String hornet, List<JavaFileObject> compilationUnits) {
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager stdManager = compiler.getStandardFileManager(null, null, null);
+    private boolean flag;
+    private StringWriter exceptionMessage = new StringWriter();
+
+    public DynamicLoader(String[] code, String[] name, List<JavaFileObject> compilationUnits) {
         manager = new MemoryJavaFileManager(stdManager);
+        JavaFileObject javaFileObject;
+
+        if(code == null && name == null){
+            this.compilationUnits = compilationUnits;
+        }else if(compilationUnits == null) {
+            for(int i = 0; i < code.length; i++) {
+                javaFileObject = manager.makeStringSource(name[i], code[i]);
+                this.compilationUnits.add(javaFileObject);
+            }
+        }else {
+            this.compilationUnits = compilationUnits;
+            for (int i = 0; i < code.length; i++) {
+                javaFileObject = manager.makeStringSource(name[i], code[i]);
+                this.compilationUnits.add(javaFileObject);
+            }
+        }
+    }
+
+    public void compile() {
         try {
-            JavaFileObject javaFileObject1 = manager.makeStringSource("HoneyBee.java", bee);
-            compilationUnits.add(javaFileObject1);
-            javaFileObject1 = manager.makeStringSource("Hornet.java", hornet);
-            compilationUnits.add(javaFileObject1);      //加载两个字符串源码到编译集合中，下一步获取编译任务
             JavaCompiler.CompilationTask task = compiler.getTask(exceptionMessage, manager, null, null, null, compilationUnits);
             flag=task.call();       //执行编译任务，返回是否成功
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     public boolean isFinished(){
         return flag;
     }

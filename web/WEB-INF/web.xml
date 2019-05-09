@@ -9,8 +9,16 @@
         <servlet-name>compile</servlet-name>
         <servlet-class>compile</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>BeeTest</servlet-name>
+        <servlet-class>BeeTest</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>compile</servlet-name>
         <url-pattern>/compile</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>BeeTest</servlet-name>
+        <url-pattern>/BeeTest</url-pattern>
     </servlet-mapping>
 </web-app>

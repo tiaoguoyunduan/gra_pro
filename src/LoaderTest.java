@@ -1,33 +1,48 @@
-import javax.tools.JavaFileObject;
+import javax.tools.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
 public class LoaderTest{
-    private String bee,hornet;
-    private DynamicLoader dynamicLoader=new DynamicLoader();
+    private DynamicLoader dynamicLoader;
     private Object message=null;
-    private List<JavaFileObject> compilationUnits= new ArrayList<JavaFileObject>();
-    public LoaderTest(String bee,String hornet, Iterator<? extends JavaFileObject> compilationUnits) {
-        this.bee=bee;
-        this.hornet=hornet;
-        while (compilationUnits.hasNext()) this.compilationUnits.add(compilationUnits.next());
+    public LoaderTest(String[] code,String[] name, String[] path) {
+        if(code == null && name == null){
+            dynamicLoader = new DynamicLoader(null, null, pathToList(path));
+        }else if (path == null) {
+            dynamicLoader = new DynamicLoader(null, null, null);
+        }else {
+            dynamicLoader = new DynamicLoader(code, name, pathToList(path));
+        }
     }
 
-    public boolean testInvoke() throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NullPointerException {
-        dynamicLoader.compile(bee, hornet, compilationUnits);        //动态编译
+    public boolean testInvoke(String mainClass, String mainMethod, Object input, Class<?> inputType) throws ClassNotFoundException, IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException, NullPointerException {
+        dynamicLoader.compile();        //动态编译
         if(dynamicLoader.isFinished()){                              //如果编译成功
             Map<String, byte[]> bytecode=dynamicLoader.getClassBytes();  //获取字节码
             DynamicLoader.MemoryClassLoader classLoader = new DynamicLoader.MemoryClassLoader(bytecode);
-            Class clazz = classLoader.loadClass("BeeFarming");      //动态加载类
+            Class clazz = classLoader.loadClass(mainClass);      //动态加载类 BeeFarming
             Object object = clazz.newInstance();                        //实例化
-            Method method = clazz.getMethod("letsrun");           //执行对战方法
-            message = method.invoke(object);
-            //System.out.println(a+"   "+b+"   "+message);
+            Method method = clazz.getMethod(mainMethod, inputType);          //执行对战方法 letsrun
+            message = method.invoke(object, input);
             return true;
         }else {
             return false;
         }
+    }
+    private List<JavaFileObject> pathToList(String[] path) {
+        List<JavaFileObject> compilationUnits= new ArrayList<JavaFileObject>();
+        List<String> paths = Arrays.asList(path);
+        Iterator<? extends JavaFileObject> compilationUnit;
+
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+        StandardJavaFileManager fileManager = compiler.getStandardFileManager(
+                diagnostics, null, null);
+        compilationUnit = fileManager.getJavaFileObjectsFromStrings(paths).iterator();  //固定java文件集合
+
+        while (compilationUnit.hasNext()) compilationUnits.add(compilationUnit.next());
+        return compilationUnits;
     }
     public Object getMessage(){
         return message;

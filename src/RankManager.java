@@ -10,7 +10,7 @@ public class RankManager{
     public void readRank(String playerName){     //读取积分表，判断提交者是否初次提交
         this.playerName=playerName;
         try {
-            Scanner input = new Scanner(new File("F:\\gra_pro\\project\\test\\rank.dat"));
+            Scanner input = new Scanner(new File(compile.filePath+"\\rank.dat"));
             playerNum = Integer.parseInt(input.next());
             matchNum=playerNum*(playerNum-1)/2;
             if (playerNum != 0) {
@@ -91,7 +91,7 @@ public class RankManager{
                 }
                 matchScoreS = matchScoreS + "\r\n";
             }
-            PrintWriter out = new PrintWriter(new FileWriter("F:\\gra_pro\\project\\test\\rank.dat"));
+            PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(compile.filePath+"\\rank.dat"),"utf-8"));
             out.print(playerNum+"\r\n");
             out.println(nameS);
             out.println(scoreS);
@@ -103,12 +103,12 @@ public class RankManager{
     }
     public static String getRank(){     //获取排序后的积分表
         try{
-            Scanner input = new Scanner(new File("F:\\gra_pro\\project\\test\\rank.dat"));
+            Scanner input = new Scanner(new File(compile.filePath+"\\rank.dat"));
             int playerNum=Integer.parseInt(input.next());
             //out.print(playerNum);
             String[] name=new String[playerNum];
             int[] score=new int[playerNum];
-            String n,message="";
+            String n,message="<tr><th>姓名</th><th>积分</th></tr>";
             int s;
             for(int i=0;i<playerNum;i++){
                 name[i]=input.next();
